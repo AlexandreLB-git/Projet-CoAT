@@ -1,45 +1,50 @@
-TITLE
+# Algorithmic optimization of a complexity-based classifier (CoAT)
 
-Algorithmic optimization and implementation of a complexity-based classifier (CoAT)
+Alexandre Lebleu, Léonard Jung · Supervisor: Chunyang Fan · Sorbonne Université, May 2025
 
-ABSTRACT
+📄 **[Full report (English)](CoAT_Project_Report.pdf)** · [Version française](CoAT_Project_Report_FR.pdf) · [Notebook](coat_final.ipynb)
 
-This project investigates and optimizes the CoAT classifier (Complexity-based Analogical Transfer). Starting from a naive Python implementation with O(n^3) complexity, we analyse the problem and propose an optimized algorithm that only considers triplets involving the new case, reducing complexity to O(n^2). We also deliver a vectorized PyTorch implementation leveraging GPU acceleration.
+## Overview
 
-PROJECT DESCRIPTION
+CoAT (Complexity-based Analogical Transfer, [Badra, IJCAI 2020](https://doi.org/10.24963/ijcai.2020/222)) is a case-based classifier. To label a new point, it tries each candidate label and keeps the one that minimizes the number of *similarity inversions* in the dataset: triplets where x_j is closer to x_i than x_k in input space, but y_j is further from y_i than y_k in output space.
 
-Theoretical analysis of the incompatibility function used by CoAT and mathematical justification for complexity reduction.
+The published algorithm counts every triplet of the case base, which is O(n³) per prediction and impractical beyond a few hundred points. This project makes it fast:
 
-Implementations compared: Naive Python version (triplet loops). Optimized Python version (iterate only on relevant pairs). Vectorized PyTorch version (parallel GPU computation).
+1. **Theory.** We prove that the inversions inside the existing case base do not depend on the candidate label, so the prediction only depends on triplets that contain the new point. Some of those subsets provably contribute no inversion. This reduces prediction to **O(n²)** with identical outputs.
+2. **Optimized Python version** that only iterates over the relevant pairs.
+3. **Vectorized PyTorch version** that replaces the loops with tensor operations and runs on GPU.
 
-EXPERIMENTAL APPLICATION: binary classification of points in the plane (prediction of class colours).
+## Results
 
-Experimental protocol: synthetic case-base generation, prediction experiments, and runtime measurements as a function of case-base size.
+Binary classification of points in the plane (synthetic data), case base of 100 points:
 
-MAIN RESULTS
+| Version | Complexity | Prediction time |
+|---|---|---|
+| Naive Python | O(n³) | ≈ 15 s per point |
+| Optimized Python | O(n²) | ≈ 0.5 s per point |
+| PyTorch (GPU, RTX 3050) | O(n²), vectorized | ≈ 4 ms for 100 points |
 
-Theoretical complexity reduction from O(n^3) to O(n^2) for the optimized algorithm.
+The optimized version is about 30× faster than the naive one. The PyTorch version predicts 100 points in less time than the naive version needs for a single one. GPU time stays almost flat as the case base and the number of points grow, until GPU memory saturates (see the report, Section 6).
 
-Empirical speedups:
+## Repository
 
-Optimized Python: ~30× faster than the naive Python implementation for a case-base of 100 points (≈0.5 s vs ≈15 s per predicted point).
+| File | Content |
+|---|---|
+| `CoAT_Project_Report.pdf` | Full report (English): proofs, algorithms, experiments |
+| `CoAT_Project_Report_FR.pdf` | Original report (French) |
+| `coat_final.ipynb` | Naive, optimized and PyTorch implementations, experiments and plots |
 
-PyTorch vectorized version: ~3750× speedup for predicting 100 points on a 100-element base in our reported experiments.
+To run it, open `coat_final.ipynb`. The PyTorch part uses a CUDA GPU if available, otherwise the CPU.
 
-LIMITATIONS AND FUTURE WORK
+**Note on GPU memory.** Some intermediate tensors grow quickly with the size of the case base. On large inputs, the notebook can raise `CUDA error: out of memory`. This is a hardware limit, not a bug, and we left it visible on purpose to illustrate the memory constraints of the vectorized approach. Splitting the tensors into blocks, as described in the report, avoids it.
 
-Main constraint: GPU memory saturation for very large case-bases.
+## Limitations and future work
 
-Suggested improvements: dynamic block splitting for GPU memory management, learning similarity metrics, benchmarking against other classifiers (K-NN, SVM), and experiments on noisy or real-world datasets.
+- GPU memory saturation on very large case bases (block splitting proposed).
+- Evaluation focuses on runtime; prediction quality is not yet benchmarked against other classifiers (k-NN, SVM).
+- Experiments use synthetic 2D data; real or noisy datasets are a natural next step.
+- Learning the similarity measures from the data.
 
-TECHNICAL NOTE: GPU execution
+## Updates
 
-During certain GPU executions, the following error may occur: “CUDA error: out of memory.”
-
-This error does not indicate a fault in the implementation, but reflects a hardware limitation of the GPU memory. In the “coat_final.ipynb” notebook, some intermediate tensors used to construct analogies are very large. When their size exceeds the available memory on the GPU, the execution fails.
-
-We have chosen to leave this error visible to illustrate the spatial limitations of GPUs and raise awareness of the challenges of memory management when performing parallel calculations on large tensors.
-
-FULL REPORT
-
-The full project report is included in the repository: CoAT_Project_Report.pdf
+- **October 2026:** English translation of the report.
