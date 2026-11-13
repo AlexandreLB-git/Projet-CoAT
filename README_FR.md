@@ -1,51 +1,53 @@
-TITRE
+# Optimisation algorithmique d'un classifieur fondé sur la complexité (CoAT)
 
-Optimisation algorithmique et implémentation d’un classifieur fondé sur l’incompatibilité (CoAT)
+Alexandre Lebleu, Léonard Jung · Encadrante : Chunyang Fan · Sorbonne Université, mai 2025
 
-RESUME
+📄 [Rapport complet (anglais)](CoAT_Project_Report.pdf) · [Version française](CoAT_Project_Report_FR.pdf) · [Notebook](coat_final.ipynb) · [English README](README.md)
 
-Ce projet étudie et optimise le classifieur CoAT (Complexity-based Analogical Transfer). Après avoir implémenté une version naïve en Python (complexité O(n^3)), nous proposons une analyse visant à ne considérer que les triplets impliquant la nouvelle situation, conduisant à une version optimisée en O(n^2). Nous présentons également une implémentation vectorisée en PyTorch exploitant le calcul GPU.
+## Présentation
 
-DESCRIPTION DU TRAVAIL
+CoAT (Complexity-based Analogical Transfer, Badra, IJCAI 2020) est un classifieur à base de cas. Pour étiqueter un nouveau point, il essaie chaque classe candidate et garde celle qui minimise le nombre d'*inversions de similarité* dans les données : les triplets où x_j est plus proche de x_i que x_k dans l'espace d'entrée, alors que y_j est plus éloigné de y_i que y_k dans l'espace de sortie.
 
-Analyse théorique de la fonction d’incompatibilité utilisée par CoAT et justification mathématique de la réduction de complexité.
+L'algorithme publié compte tous les triplets de la base de cas, ce qui coûte O(n³) par prédiction et devient inutilisable au-delà de quelques centaines de points. Ce projet le rend rapide :
 
-Implémentation comparée de trois versions :
-Version naïve en Python (boucles sur triplets).
-Version optimisée en Python (itère uniquement sur les paires pertinentes).
-Version vectorisée en PyTorch (calculs parallélisés sur GPU).
+- **Théorie.** Nous prouvons que les inversions internes à la base de cas ne dépendent pas de la classe candidate : la prédiction ne dépend donc que des triplets contenant le nouveau point. Certains de ces sous-ensembles ne contiennent aucune inversion, ce qui se démontre. La prédiction passe ainsi à O(n²), avec des résultats identiques.
+- **Version Python optimisée**, qui ne parcourt que les paires utiles.
+- **Version PyTorch vectorisée**, qui remplace les boucles par des opérations tensorielles et s'exécute sur GPU.
 
-APPLICATION EXPERIMENTALE CHOISIE : classification binaire de points dans le plan (prédiction de la couleur — rouge/bleu).
+Le notebook vérifie numériquement que les trois versions donnent les mêmes prédictions : le score O(n²) est égal au score naïf moins une constante indépendante de la classe, et la version PyTorch donne la même prédiction que la version Python sur chaque point de test.
 
-Protocole expérimental : génération synthétique de bases de cas, prédiction de points et mesure des temps d’exécution moyens selon la taille de la base.
+## Résultats
 
-RESULTATS PRINCIPAUX
+Classification binaire de points du plan (données synthétiques), base de 100 cas, exécution sur un GPU Google Colab :
 
-Réduction théorique de la complexité de O(n^3) à O(n^2) pour l’algorithme optimisé.
+| Version | Complexité | Temps de prédiction | Accélération |
+|---|---|---|---|
+| Python naïf | O(n³) | ≈ 8 s par point | |
+| Python optimisé | O(n²) | ≈ 0,25 s par point | ≈ 30× par rapport à la naïve |
+| PyTorch (GPU) | O(n²), vectorisée | ≈ 3,5 ms par point | ≈ 70× par rapport à l'optimisée, plus de 2 000× par rapport à la naïve |
 
-Gains empiriques observés :
+Le gain de la version O(n²) vient de l'algorithme et reste stable d'une exécution à l'autre. Le gain GPU dépend du matériel et de sa charge : pour un seul point, le temps mesuré correspond surtout au coût fixe de lancement des opérations sur le GPU. Le GPU devient vraiment rentable sur des lots : 100 points sont prédits en environ 10 ms avec une base de 100 cas, et en moins de 20 ms pour des bases allant jusqu'à 300 cas.
 
-Version optimisée (Python) : amélioration d’un facteur ~30 par rapport à la version naïve pour une base de 100 points (temps pour prédire 1 point ≈ 0.5 s vs 15 s).
+## Contenu du dépôt
 
-Version PyTorch (vectorisée, GPU) : amélioration d’un facteur ~3750 pour la prédiction de 100 points sur une base de 100 éléments (temps comparatif rapporté dans le rapport).
+| Fichier | Contenu |
+|---|---|
+| `CoAT_Project_Report.pdf` | Rapport complet (anglais) : preuves, algorithmes, expériences |
+| `CoAT_Project_Report_FR.pdf` | Rapport original (français) |
+| `coat_final.ipynb` | Implémentations naïve, optimisée et PyTorch, vérifications, mesures de temps et graphiques |
 
+Pour l'exécuter, ouvrir `coat_final.ipynb` (par exemple dans Google Colab avec un environnement GPU). La partie PyTorch utilise un GPU CUDA s'il est disponible, sinon le CPU.
 
-LIMITES ET PERSPECTIVES
+**Mémoire GPU.** Les tenseurs de comparaison de la version vectorisée croissent en p × N² (p points à prédire, N cas). Sur de grandes entrées, la mémoire du GPU peut être saturée. Le découpage des tenseurs en blocs, décrit dans le rapport, permet de l'éviter.
 
-Limites principales : saturation mémoire GPU pour de très grandes bases de cas.
+## Limites et pistes
 
-Pistes d’amélioration proposées : découpage dynamique en sous-blocs pour contourner la limite mémoire, apprentissage de métriques de similarité, comparaison avec d’autres classifieurs (K-NN, SVM) et tests sur jeux de données réels et bruités.
+- Croissance rapide de la mémoire GPU sur de très grandes bases de cas (découpage en blocs proposé).
+- L'évaluation porte sur le temps de calcul ; la qualité des prédictions n'est pas encore comparée à d'autres classifieurs (k-NN, SVM).
+- Les expériences utilisent des données 2D synthétiques ; des jeux de données réels ou bruités sont une suite naturelle.
+- Apprendre les mesures de similarité à partir des données.
 
-Saturation mémoire du GPU pour des bases > 500 points
+## Mises à jour
 
-
-NOTE TECHNIQUE : exécution GPU
-
-Lors de certaines exécutions sur GPU, il est possible d’obtenir l’erreur suivante :"CUDA error: out of memory"
-
-Cette erreur n’indique pas une faute dans l’implémentation, mais reflète une limitation matérielle de la mémoire GPU. Dans le notebook "coat_final.ipynb", certains tenseurs intermédiaires utilisés pour la construction des analogies sont très volumineux. Lorsque leur taille dépasse la mémoire disponible sur le GPU, l’exécution échoue.
-
-Nous avons choisi de laisser cette erreur visible pour illustrer concrètement les limites spatiales des GPU et sensibiliser aux enjeux de gestion de mémoire lors de calculs parallèles sur des tenseurs de grande taille. 
-
-Améliorations possibles :
-découpage dynamique (batching) ; apprentissage de métriques (learning-to-rank / metric learning) ; comparaison avec d’autres classifieurs (kNN, SVM)
+- **Novembre 2026 :** correction de bugs dans le notebook, ajout de vérifications de concordance entre les trois versions, traduction du notebook en anglais et nouvelle exécution de toutes les mesures. Les temps ci-dessus proviennent de cette version ; le rapport présente les expériences d'origine de mai 2025.
+- **Octobre 2026 :** traduction du rapport en anglais.
