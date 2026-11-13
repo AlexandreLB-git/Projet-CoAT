@@ -1,6 +1,6 @@
 # Algorithmic optimization of a complexity-based classifier (CoAT)
 
-Alexandre Lebleu, Léonard Jung · Supervisor: Chunyang Fan · Sorbonne Université, June 2025
+Alexandre Lebleu, Léonard Jung · Supervisor: Chunyang Fan · Sorbonne Université, May 2025
 
 📄 [Full report (English)](CoAT_Project_Report.pdf) · [Version française](CoAT_Project_Report_FR.pdf) · [Notebook](coat_final.ipynb)
 
@@ -49,5 +49,5 @@ To run it, open `coat_final.ipynb` (for example in Google Colab with a GPU runti
 
 ## Updates
 
-- **November 2026:** fixed bugs in the notebook, added correctness checks across the three versions, translated the notebook to English and re-ran all benchmarks. The timings above come from this version; the report reflects the original June 2025 experiments.
+- **November 2026:** fixed bugs in the notebook, added correctness checks across the three versions, translated the notebook to English and re-ran all benchmarks. The timings above come from this version; the report reflects the original May 2025 experiments.
 - **October 2026:** English translation of the report.
